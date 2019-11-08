@@ -10,10 +10,10 @@ using namespace std;
 
 int main(int argc, char const *argv[])
 {
-	if (argc < 5)
+	if (argc < 6)
 	{
 		cout << "Debe ingresar: " << endl;
-		cout << "./emisor ipMulticast puerto TTL \"Mensaje\"" << endl;
+		cout << "./emisor ipMulticast puerto TTL int_1 int_2" << endl;
 		exit(1);
 	}
 
@@ -21,9 +21,13 @@ int main(int argc, char const *argv[])
     strcpy(ipRemota, argv[1]);
 	int puerto = atoi(argv[2]);
 	unsigned char ttl = atoi(argv[3]);
-	strcpy(mensaje, argv[4]);
-	string sMensaje = string(mensaje);
-	int tam = sMensaje.length() + 1;
+	
+	string args;
+    args += argv[4];
+    args += " ";
+    args += argv[5];
+    const char * cargs = args.c_str();
+
 
 	SocketMulticast socket  = SocketMulticast(puerto);
 	PaqueteDatagrama paquete_env = PaqueteDatagrama(mensaje, tam, ipRemota, puerto);

@@ -1,7 +1,7 @@
 #ifndef RESPUESTA_H_
 #define RESPUESTA_H_
 
-#include "SocketDatagrama.h"
+#include "SocketMulticast.h"
 
 class Respuesta
 {
@@ -13,7 +13,7 @@ public:
 	void sendReply(char * respuesta);
 
 private:
-	SocketDatagrama * socketLocal;
+	SocketMulticast * socketLocal;
 
 	unsigned int msjId;
 	

@@ -128,3 +128,116 @@ void SocketMulticast::salirseGrupo(char *ipMulticast)
         exit(1);
     }
 }
+
+
+int SocketMulticast::enviaMensaje(PaqueteDatagrama &p)
+{
+	unsigned char tt = 0x01;
+	int bytes_env;
+	socklen_t tam_dir;
+
+	tam_dir = sizeof(addrForanea);
+
+
+	/* Llenar estructura (direccion remota) */
+	memset(&addrForanea, 0, sizeof(addrForanea));
+	addrForanea.sin_family = AF_INET;
+	addrForanea.sin_addr.s_addr = inet_addr(p.obtieneDireccion());
+	addrForanea.sin_port = htons(p.obtienePuerto());
+
+	if (setsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, (void *) &tt ,sizeof(tt)) < 0)
+	{
+        perror("setsockopt");
+        exit(1);
+    }
+
+	bytes_env = sendto(s, (struct TextMessage*)p.obtieneMensaje(), p.obtieneLongitud(), 0, (struct sockaddr *) &addrForanea, tam_dir);
+	if (bytes_env < 0)
+	{
+		printf("%d\n", p.obtieneLongitud());
+		perror("Fallo en envio");
+		exit(1);
+	}
+
+	return bytes_env;
+}
+
+int SocketMulticast::recibeMensaje(PaqueteDatagrama &p)
+{
+	int bytes_recv;
+	socklen_t tam_dir;
+	char ipRemota[INET_ADDRSTRLEN];
+	
+	tam_dir = sizeof(addrForanea);
+
+	struct mensaje temp;
+	
+	bytes_recv = recvfrom(s, &temp, sizeof(temp), 0, (struct sockaddr *) &addrForanea, &tam_dir);
+	if (bytes_recv < 0)
+	{
+		perror("Error al recibir");
+		exit(1);
+	}
+	/* Imprimir en consola la dirección y puerto del host remoto (asignarlas a PaqueteDatagrama)*/
+	
+	inet_ntop(AF_INET, &(addrForanea.sin_addr), ipRemota, INET_ADDRSTRLEN);
+	p.inicializaIp(ipRemota);
+	p.inicializaPuerto(htons(addrForanea.sin_port));
+	p.inicializaMensaje(&temp);
+	
+	return bytes_recv;
+}
+
+int SocketMulticast::recibeTimeout(PaqueteDatagrama & p, time_t segundos, suseconds_t microsegundos)
+{
+
+	int bytes_recv;
+	socklen_t tam_dir;
+	char ipRemota[INET_ADDRSTRLEN];
+	
+	tam_dir = sizeof(addrForanea);
+
+	struct mensaje temp;
+
+	// Inicialización y uso del timeout:
+
+	timeout.tv_sec = segundos;
+	timeout.tv_usec = microsegundos;
+	if (setsockopt(s, SOL_SOCKET, SO_RCVTIMEO, (char *)&timeout, sizeof(timeout)) < 0)
+	{
+		perror("No se pudo establecer el timeout.\n");
+		exit(1);
+	}
+	
+	bytes_recv = recvfrom(s, &temp, sizeof(temp), 0, (struct sockaddr *) &addrForanea, &tam_dir);
+	if (bytes_recv < 0)
+	{
+		if (errno == EWOULDBLOCK)
+		{
+			fprintf(stderr, "Tiempo para recepción transcurrido\n");
+		}
+		else
+		{
+			fprintf(stderr, "Error en recvfrom\n");
+		}
+	}
+	/* Imprimir en consola la dirección y puerto del host remoto (asignarlas a PaqueteDatagrama)*/
+	
+	inet_ntop(AF_INET, &(addrForanea.sin_addr), ipRemota, INET_ADDRSTRLEN);
+	p.inicializaIp(ipRemota);
+	p.inicializaPuerto(htons(addrForanea.sin_port));
+	p.inicializaMensaje(&temp);
+	
+	return bytes_recv;
+}
+
+const void * SocketMulticast::obtieneDireccionForanea()
+{
+	return &(addrForanea.sin_addr);
+}
+
+
+int SocketMulticast::obtienePuertoForaneo()
+{
+	return htons(addrForanea.sin_port);
+}

@@ -1,4 +1,6 @@
 #define TAM_MAX_DATA 4000 // 64000 - 12
+#define MAX_BUFF_TAM 4000 // 64000 - 12
+
 
 //Definicion de identificadores para operaciones permitidas:
 #define suma 1

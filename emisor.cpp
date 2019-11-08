@@ -1,5 +1,4 @@
-#include "SocketMulticast.h"
-#include "PaqueteDatagrama.h"
+#include "Solicitud.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -29,10 +28,9 @@ int main(int argc, char const *argv[])
     const char * cargs = args.c_str();
 
 
-	SocketMulticast socket  = SocketMulticast(puerto);
-	PaqueteDatagrama paquete_env = PaqueteDatagrama(mensaje, tam, ipRemota, puerto);
+    Solicitud solicitud = Solicitud();
 
-	int enviados = socket.envia(paquete_env, ttl);
+    char * respuesta = solicitud.doOperation(ipRemota, puerto, suma, cargs);
 
 	return 0;
 }

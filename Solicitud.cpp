@@ -1,6 +1,6 @@
 #include "Solicitud.h"
 #include "PaqueteDatagrama.h"
-#include "SocketDatagrama.h"
+#include "SocketMulticast.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -11,7 +11,7 @@ using namespace std;
 
 Solicitud::Solicitud() : msjId(0)
 {
-	socketLocal = new SocketDatagrama(0);
+	socketLocal = new SocketMulticast(0);
 }
 
 char * Solicitud::doOperation(char *IP, int puerto, int operationId, const char *arguments)

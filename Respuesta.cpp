@@ -1,7 +1,7 @@
 #include "Respuesta.h"
 
 #include "PaqueteDatagrama.h"
-#include "SocketDatagrama.h"
+#include "SocketMulticast.h"
 
 #include <arpa/inet.h>
 #include <stdio.h>
@@ -14,14 +14,14 @@ using namespace std;
 
 Respuesta::Respuesta(int pl) : msjId(0)
 {
-	socketLocal = new SocketDatagrama(7200);
+	socketLocal = new SocketMulticast(7200);
 }
 
 struct mensaje * Respuesta::getRequest(void)
 {
 	int bytes_recv, bytes_env;
 
-	PaqueteDatagrama paquete_recv = PaqueteDatagrama(MAX_BUFF_TAM);
+	PaqueteDatagrama paquete_recv = PaqueteDatagrama(TAM_MAX_DATA);
 	bytes_recv = socketLocal->recibeMensaje(paquete_recv);
 
 	if (bytes_recv >= 0)

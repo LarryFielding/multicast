@@ -23,13 +23,23 @@ SocketMulticast::SocketMulticast(int p) : puerto(p)
 		exit(1);
 	}
 
-	memset(&addr, 0, sizeof(addr));
-	addr.sin_family = AF_INET;
-	addr.sin_addr.s_addr = INADDR_ANY; //htonl(INADDR_ANY)
-	addr.sin_port = htons(puerto);
+	memset(&addrLocal, 0, sizeof(addrLocal));
+	addrLocal.sin_family = AF_INET;
+	addrLocal.sin_addr.s_addr = INADDR_ANY; //htonl(INADDR_ANY)
+	addrLocal.sin_port = htons(puerto);
+
+	/* receive */
+	if (bind(s, (struct sockaddr *) &addrLocal, sizeof(addrLocal)) < 0)
+  	{
+  		perror("bind");
+  		exit(1);
+  	}
 }
 
-SocketMulticast::~SocketMulticast() {}
+SocketMulticast::~SocketMulticast() 
+{
+	close(s);
+}
 
 int SocketMulticast::recibe(PaqueteDatagrama &p)
 {
@@ -37,10 +47,10 @@ int SocketMulticast::recibe(PaqueteDatagrama &p)
 	socklen_t tam_dir;
 	char ipRemota[INET_ADDRSTRLEN];
 	
-	tam_dir = sizeof(addr);
+	tam_dir = sizeof(addrLocal);
 	cout << "Esperando mensaje..." << endl;
 	
-	bytes_recv = recvfrom(s, p.obtieneDatos(), p.obtieneLongitud(), 0, (struct sockaddr *) &addr, &tam_dir);
+	bytes_recv = recvfrom(s, p.obtieneDatos(), p.obtieneLongitud(), 0, (struct sockaddr *) &addrLocal, &tam_dir);
 	if (bytes_recv < 0)
 	{
 		perror("Error al recibir");
@@ -48,9 +58,9 @@ int SocketMulticast::recibe(PaqueteDatagrama &p)
 	}
 	/* Imprimir en consola la dirección y puerto del host remoto (asignarlas a PaqueteDatagrama)*/
 	
-	inet_ntop(AF_INET, &(addr.sin_addr), ipRemota, INET_ADDRSTRLEN);
+	inet_ntop(AF_INET, &(addrLocal.sin_addr), ipRemota, INET_ADDRSTRLEN);
 	p.inicializaIp(ipRemota);
-	p.inicializaPuerto(htons(addr.sin_port));
+	p.inicializaPuerto(htons(addrLocal.sin_port));
 	
 	return bytes_recv;
 }
@@ -63,7 +73,11 @@ int SocketMulticast::envia(PaqueteDatagrama &p, unsigned char tt)
 	}
 
 	/* Paso 3.a : es emisor */
-	addr.sin_addr.s_addr = inet_addr(p.obtieneDireccion());
+	/* Llenar estructura (direccion remota) */
+	memset(&addrForanea, 0, sizeof(addrForanea));
+	addrForanea.sin_family = AF_INET;
+	addrForanea.sin_addr.s_addr = inet_addr(p.obtieneDireccion());
+	addrForanea.sin_port = htons(p.obtienePuerto());
 
 	if (setsockopt(s, IPPROTO_IP, IP_MULTICAST_TTL, (void *) &tt ,sizeof(tt)) < 0)
 	{
@@ -74,9 +88,9 @@ int SocketMulticast::envia(PaqueteDatagrama &p, unsigned char tt)
 	int bytes_env;
 	socklen_t tam_dir;
 
-	tam_dir = sizeof(addr);
+	tam_dir = sizeof(addrForanea);
 
-	bytes_env = sendto(s, p.obtieneDatos(), p.obtieneLongitud(), 0, (struct sockaddr *) &addr, tam_dir);
+	bytes_env = sendto(s, p.obtieneDatos(), p.obtieneLongitud(), 0, (struct sockaddr *) &addrForanea, tam_dir);
 	if (bytes_env < 0)
 	{
 		perror("Fallo en envio");
@@ -88,12 +102,7 @@ int SocketMulticast::envia(PaqueteDatagrama &p, unsigned char tt)
 
 void SocketMulticast::unirseGrupo(char *ipMulticast)
 {
-	/* receive */
-	if (bind(s, (struct sockaddr *) &addr, sizeof(addr)) < 0)
-  	{
-  		perror("bind");
-  		exit(1);
-  	}
+	
 
 	/* 224.0.0.0 hasta la 239.255.255.255 */
 	multicast.imr_multiaddr.s_addr = inet_addr(ipMulticast); /* Dirección IP del grupo multicast */

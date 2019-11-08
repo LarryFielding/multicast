@@ -19,7 +19,8 @@ public:
 private:
     int s; //ID socket
     int puerto;
-    struct sockaddr_in addr;
+    struct sockaddr_in addrLocal;
+    struct sockaddr_in addrForanea;
     struct ip_mreq multicast;
 };
 

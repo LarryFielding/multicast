@@ -3,6 +3,8 @@
 
 #include <netinet/in.h>
 
+#include "PaqueteDatagrama.h"
+
 class SocketMulticast
 {
 public:
@@ -16,7 +18,8 @@ public:
     void salirseGrupo(char *);
 private:
     int s; //ID socket
-    struct sockaddr_in direccionLocal;
+    int puerto;
+    struct sockaddr_in addr;
     struct ip_mreq multicast;
 };
 
